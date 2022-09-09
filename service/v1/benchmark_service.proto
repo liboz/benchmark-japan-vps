@@ -3,11 +3,17 @@ package service.v1;
 option go_package = "liboz/benchmark-japan-vps/gen/service/v1;benchmarkv1";
 
 service BenchmarkService {
-  rpc GetResult(GetResultRequest) returns (GetResultResponse);
+  rpc GetResults(GetResultsRequest) returns (GetResultsResponse);
 }
 
-message GetResultRequest {
+message GetResultsRequest {
 }
 
-message GetResultResponse {
+message GetResultsResponse {
+  message Result {
+    int64 start_time = 1;
+    int64 end_time = 2;
+  }
+
+  repeated Result results = 1;
 }

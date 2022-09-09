@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/bufbuild/connect-go"
 
@@ -14,13 +16,37 @@ import (
 
 var PORT = 8000
 
-type BenchmarkServer struct{}
+var RESULTS = []*benchmarkv1.GetResultsResponse_Result{}
 
-func (s *BenchmarkServer) GetResult(
+type BenchmarkServer struct {
+	mutex sync.Mutex
+}
+
+func (s *BenchmarkServer) updateResults(result *benchmarkv1.GetResultsResponse_Result) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	RESULTS = append(RESULTS, result)
+}
+
+func (s *BenchmarkServer) runBenchmark() {
+	startTime := time.Now().Unix()
+	endTime := time.Now().Unix()
+	log.Printf("Benchmark took %dms to run", endTime-startTime)
+	result := &benchmarkv1.GetResultsResponse_Result{}
+	result.StartTime = startTime
+	result.EndTime = endTime
+	s.updateResults(result)
+}
+
+func (s *BenchmarkServer) GetResults(
 	ctx context.Context,
-	req *connect.Request[benchmarkv1.GetResultRequest],
-) (*connect.Response[benchmarkv1.GetResultResponse], error) {
-	return connect.NewResponse(&benchmarkv1.GetResultResponse{}), nil
+	req *connect.Request[benchmarkv1.GetResultsRequest],
+) (*connect.Response[benchmarkv1.GetResultsResponse], error) {
+	s.mutex.Lock()
+	currentResults := RESULTS
+	RESULTS = []*benchmarkv1.GetResultsResponse_Result{}
+	s.mutex.Unlock()
+	return connect.NewResponse(&benchmarkv1.GetResultsResponse{Results: currentResults}), nil
 }
 
 func main() {

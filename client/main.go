@@ -16,9 +16,9 @@ func main() {
 		http.DefaultClient,
 		"http://localhost:8000",
 	)
-	res, err := client.GetResult(
+	res, err := client.GetResults(
 		context.Background(),
-		connect.NewRequest(&benchmarkv1.GetResultRequest{}),
+		connect.NewRequest(&benchmarkv1.GetResultsRequest{}),
 	)
 	if err != nil {
 		log.Println(err)
