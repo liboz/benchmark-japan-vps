@@ -1,0 +1,13 @@
+syntax = "proto3";
+package service.v1;
+option go_package = "liboz/benchmark-japan-vps/gen/service/v1;benchmarkv1";
+
+service BenchmarkService {
+  rpc GetResult(GetResultRequest) returns (GetResultResponse);
+}
+
+message GetResultRequest {
+}
+
+message GetResultResponse {
+}
