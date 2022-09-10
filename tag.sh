@@ -1,3 +1,2 @@
-git push
 git tag $(git rev-parse --short HEAD)
-git push --tags
+git push --follow-tags
