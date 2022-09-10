@@ -20,13 +20,13 @@ import (
 )
 
 var PORT = 8000
-var RESULTS = []*benchmarkv1.GetResultsResponse_Result{}
+var RESULTS = []*benchmarkv1.BenchmarkResult{}
 var BENCHMARK_SCRIPT = "./bench.sh"
 var PARSE_BENCHMARK_RESULT_SCRIPT = "./parse_benchmark_result.sh"
 
-func csvToResult(csvData [][]string) *benchmarkv1.GetResultsResponse_Result {
+func csvToResult(csvData [][]string) *benchmarkv1.BenchmarkResult {
 	fmt.Println(csvData)
-	result := &benchmarkv1.GetResultsResponse_Result{}
+	result := &benchmarkv1.BenchmarkResult{}
 	index := 0
 	ioSpeedData := csvData[index]
 	if ioSpeedData[0] == "I/O Speed" {
@@ -41,7 +41,7 @@ func csvToResult(csvData [][]string) *benchmarkv1.GetResultsResponse_Result {
 	index = 1
 	currRow := csvData[index]
 	for len(currRow) == 4 {
-		speedTestResult := benchmarkv1.GetResultsResponse_SpeedTestResult{}
+		speedTestResult := benchmarkv1.SpeedTestResult{}
 		speedTestResult.City = currRow[0]
 		speedTestResult.Country = currRow[1]
 		sizeInBytes, err := units.FromHumanSize(currRow[2])
@@ -87,7 +87,7 @@ func csvToResult(csvData [][]string) *benchmarkv1.GetResultsResponse_Result {
 	for index < len(csvData) {
 		currRow = csvData[index]
 
-		pingTestResult := benchmarkv1.GetResultsResponse_PingTestResult{}
+		pingTestResult := benchmarkv1.PingTestResult{}
 		pingTestResult.Url = currRow[0]
 		parsed, err := units.FromHumanSize(currRow[1])
 		if err == nil {
@@ -137,20 +137,20 @@ type BenchmarkServer struct {
 	mutex sync.Mutex
 }
 
-func (s *BenchmarkServer) updateResults(result *benchmarkv1.GetResultsResponse_Result) {
+func (s *BenchmarkServer) updateResults(result *benchmarkv1.BenchmarkResult) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	RESULTS = append(RESULTS, result)
 }
 
-func (s *BenchmarkServer) runBenchmark() {
+func (s *BenchmarkServer) runBenchmark() *benchmarkv1.BenchmarkResult {
 	startTime := time.Now().Unix()
 
 	cmd := exec.Command("/bin/bash", BENCHMARK_SCRIPT)
 	_, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Printf("Error running benchmark script %s\n", err)
-		return
+		return nil
 	}
 
 	endTime := time.Now().Unix()
@@ -160,13 +160,13 @@ func (s *BenchmarkServer) runBenchmark() {
 	_, err = cmd.CombinedOutput()
 	if err != nil {
 		log.Printf("Error parsing benchmark results %s\n", err)
-		return
+		return nil
 	}
 
 	f, err := os.Open("parsed_result.csv")
 	if err != nil {
 		log.Printf("Error opening result csv file %s\n", err)
-		return
+		return nil
 	}
 	defer f.Close()
 
@@ -176,7 +176,7 @@ func (s *BenchmarkServer) runBenchmark() {
 	data, err := csvReader.ReadAll()
 	if err != nil {
 		log.Printf("Error reading result csv file %s\n", err)
-		return
+		return nil
 	}
 
 	// convert records to array of structs
@@ -184,14 +184,16 @@ func (s *BenchmarkServer) runBenchmark() {
 	result.StartTime = startTime
 	result.EndTime = endTime
 	s.updateResults(result)
+
+	return result
 }
 
 func (s *BenchmarkServer) StartBenchmark(
 	ctx context.Context,
 	req *connect.Request[benchmarkv1.StartBenchmarkRequest],
 ) (*connect.Response[benchmarkv1.StartBenchmarkResponse], error) {
-	s.runBenchmark()
-	return connect.NewResponse(&benchmarkv1.StartBenchmarkResponse{}), nil
+	result := s.runBenchmark()
+	return connect.NewResponse(&benchmarkv1.StartBenchmarkResponse{Result: result}), nil
 }
 
 func (s *BenchmarkServer) GetResults(
@@ -200,7 +202,7 @@ func (s *BenchmarkServer) GetResults(
 ) (*connect.Response[benchmarkv1.GetResultsResponse], error) {
 	s.mutex.Lock()
 	currentResults := RESULTS
-	RESULTS = []*benchmarkv1.GetResultsResponse_Result{}
+	RESULTS = []*benchmarkv1.BenchmarkResult{}
 	s.mutex.Unlock()
 	return connect.NewResponse(&benchmarkv1.GetResultsResponse{Results: currentResults}), nil
 }
