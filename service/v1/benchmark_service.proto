@@ -4,16 +4,43 @@ option go_package = "liboz/benchmark-japan-vps/gen/service/v1;benchmarkv1";
 
 service BenchmarkService {
   rpc GetResults(GetResultsRequest) returns (GetResultsResponse);
+  rpc StartBenchmark(StartBenchmarkRequest) returns (StartBenchmarkResponse);
 }
 
 message GetResultsRequest {
 }
 
 message GetResultsResponse {
+  message PingTestResult {
+    string url = 1;
+    int64 dropped_packets = 2;
+    double minimum_ping = 3;
+    double average_ping = 4;
+    double maximum_ping = 5;
+    double standard_deviation = 6;
+  }
+
+  message SpeedTestResult  {
+    string location = 1;
+    double upload_speed = 2;
+    double download_speed = 3;
+  }
+  
   message Result {
     int64 start_time = 1;
     int64 end_time = 2;
+    double io_speed = 3;
+    repeated SpeedTestResult speed_test_results = 4;
+    int64 single_core_geekbench = 5;
+    int64 multi_core_geekbench = 6;
+    repeated PingTestResult ping_test_results = 7; 
   }
 
   repeated Result results = 1;
+}
+
+message StartBenchmarkRequest {
+}
+
+message StartBenchmarkResponse {
 }

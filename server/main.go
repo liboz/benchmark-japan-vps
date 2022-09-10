@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/csv"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/exec"
 	"sync"
 	"time"
 
@@ -15,8 +18,20 @@ import (
 )
 
 var PORT = 8000
-
 var RESULTS = []*benchmarkv1.GetResultsResponse_Result{}
+var BENCHMARK_SCRIPT = "./bench.sh"
+var PARSE_BENCHMARK_RESULT_SCRIPT = "./parse_benchmark_result.sh"
+
+func csvToResult(csvData [][]string) *benchmarkv1.GetResultsResponse_Result {
+	fmt.Println(csvData)
+	result := &benchmarkv1.GetResultsResponse_Result{}
+	ioSpeedData := csvData[0]
+	if ioSpeedData[0] == "I/O Speed" {
+		//result.IoSpeed = ioSpeedData[1]
+	}
+
+	return result
+}
 
 type BenchmarkServer struct {
 	mutex sync.Mutex
@@ -30,12 +45,53 @@ func (s *BenchmarkServer) updateResults(result *benchmarkv1.GetResultsResponse_R
 
 func (s *BenchmarkServer) runBenchmark() {
 	startTime := time.Now().Unix()
+
+	cmd := exec.Command("/bin/bash", BENCHMARK_SCRIPT)
+	_, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Printf("Error running benchmark script %s\n", err)
+		return
+	}
+
 	endTime := time.Now().Unix()
 	log.Printf("Benchmark took %dms to run", endTime-startTime)
-	result := &benchmarkv1.GetResultsResponse_Result{}
+
+	cmd = exec.Command("/bin/bash", PARSE_BENCHMARK_RESULT_SCRIPT)
+	_, err = cmd.CombinedOutput()
+	if err != nil {
+		log.Printf("Error parsing benchmark results %s\n", err)
+		return
+	}
+
+	f, err := os.Open("parsed_result.csv")
+	if err != nil {
+		log.Printf("Error opening result csv file %s\n", err)
+		return
+	}
+	defer f.Close()
+
+	// read csv values using csv.Reader
+	csvReader := csv.NewReader(f)
+	csvReader.FieldsPerRecord = -1
+	data, err := csvReader.ReadAll()
+	if err != nil {
+		log.Printf("Error reading result csv file %s\n", err)
+		return
+	}
+
+	// convert records to array of structs
+	result := csvToResult(data)
 	result.StartTime = startTime
 	result.EndTime = endTime
 	s.updateResults(result)
+}
+
+func (s *BenchmarkServer) StartBenchmark(
+	ctx context.Context,
+	req *connect.Request[benchmarkv1.StartBenchmarkRequest],
+) (*connect.Response[benchmarkv1.StartBenchmarkResponse], error) {
+	s.runBenchmark()
+	return connect.NewResponse(&benchmarkv1.StartBenchmarkResponse{}), nil
 }
 
 func (s *BenchmarkServer) GetResults(
@@ -54,6 +110,23 @@ func main() {
 	mux := http.NewServeMux()
 	path, handler := benchmarkv1connect.NewBenchmarkServiceHandler(benchmarkServer)
 	mux.Handle(path, handler)
+
+	f, err := os.Open("test.txt")
+	if err != nil {
+		log.Printf("Error opening result csv file %s\n", err)
+		return
+	}
+	defer f.Close()
+
+	// read csv values using csv.Reader
+	csvReader := csv.NewReader(f)
+	csvReader.FieldsPerRecord = -1
+	data, err := csvReader.ReadAll()
+	if err != nil {
+		log.Printf("Error reading result csv file %s\n", err)
+		return
+	}
+	csvToResult(data)
 
 	log.Printf("Starting server on port %d\n", PORT)
 	log.Fatal(http.ListenAndServe(":"+fmt.Sprintf("%d", PORT), mux))
