@@ -9,9 +9,13 @@ get_latest_release() {
     sed -E 's/.*"([^"]+)".*/\1/'                                    # Pluck JSON value
 }
 
-DEBUG_FLAG=${1:-false}
 TAG=$(get_latest_release  liboz/benchmark-japan-vps)
 echo "Latest release is $TAG"
 wget https://github.com/liboz/benchmark-japan-vps/releases/download/$TAG/benchmark-japan-vps.tar.gz
 tar -xf benchmark-japan-vps.tar.gz
-./benchmark-japan-vps $DEBUG_FLAG
+
+
+echo "Add systemd service"
+cp benchmark-server.service /etc/systemd/system 
+systemctl daemon-reload
+systemctl restart benchmark-server.service

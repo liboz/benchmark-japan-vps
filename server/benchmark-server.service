@@ -1,0 +1,10 @@
+[Unit]
+Description=benchmark server service
+
+[Service]
+ExecStart=/root/benchmark-japan-vps
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=default.target

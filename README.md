@@ -8,5 +8,5 @@ go run client/main.go client/sql.go target "postgres://username:password@localho
 
 ```
 go run server/main.go
-curl     --header "Content-Type: application/json"     --data '{}'     http://localhost:8000/service.v1.BenchmarkService/GetResult
+curl     --header "Content-Type: application/json"     --data '{}'     http://localhost:8000/service.v1.BenchmarkService/GetResults
 ```
