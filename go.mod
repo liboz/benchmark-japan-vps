@@ -2,7 +2,10 @@ module liboz/benchmark-japan-vps
 
 go 1.19
 
-require github.com/bufbuild/connect-go v0.4.0
+require (
+	github.com/bufbuild/connect-go v0.4.0
+	github.com/docker/go-units v0.5.0
+)
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
@@ -13,7 +16,6 @@ require (
 	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/docker/docker v20.10.17+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
-	github.com/docker/go-units v0.4.0 // indirect
 	github.com/go-chi/chi/v5 v5.0.7 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -63,5 +65,5 @@ require (
 
 require (
 	github.com/bufbuild/buf v1.7.0
-	google.golang.org/protobuf v1.28.1 // indirect
+	google.golang.org/protobuf v1.28.1
 )

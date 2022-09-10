@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+DATE=`date -Iseconds | sed -e "s/:/_/g"`
+YABS_PATH=./$DATE
 #
 # Description: A Bench Script by Teddysun
 #
@@ -42,6 +45,7 @@ _exit() {
     _red "\nThe script has been terminated.\n"
     # clean up
     rm -fr speedtest.tgz speedtest-cli benchtest_*
+    rm -fr ./$DATE
     exit 1
 }
 
@@ -57,8 +61,8 @@ next() {
 
 speed_test() {
     local nodeName="$2"
-    [ -z "$1" ] && ./speedtest-cli/speedtest --progress=no --accept-license --accept-gdpr > ./speedtest-cli/speedtest.log 2>&1 || \
-    ./speedtest-cli/speedtest --progress=no --server-id=$1 --accept-license --accept-gdpr > ./speedtest-cli/speedtest.log 2>&1
+    [ -z "$1" ] && ./speedtest-cli/speedtest --progress=no --accept-license --accept-gdpr -u MB/s > ./speedtest-cli/speedtest.log 2>&1 || \
+    ./speedtest-cli/speedtest --progress=no --server-id=$1 --accept-license --accept-gdpr -u MB/s > ./speedtest-cli/speedtest.log 2>&1
     if [ $? -eq 0 ]; then
         local dl_speed=$(awk '/Download/{print $3" "$4}' ./speedtest-cli/speedtest.log)
         local up_speed=$(awk '/Upload/{print $3" "$4}' ./speedtest-cli/speedtest.log)
@@ -358,8 +362,7 @@ next
 print_end_time
 next
 
-DATE=`date -Iseconds | sed -e "s/:/_/g"`
-YABS_PATH=./$DATE
+
 command -v curl >/dev/null 2>&1 && LOCAL_CURL=true || unset LOCAL_CURL
 ARCH=$(uname -m)
 
@@ -430,6 +433,8 @@ function launch_geekbench {
 		# write the geekbench claim URL to a file so the user can add the results to their profile (if desired)
 		[ ! -z "$GEEKBENCH_URL_CLAIM" ] && echo -e "$GEEKBENCH_URL_CLAIM" >> geekbench_claim.url 2> /dev/null
 	fi
+
+    rm -fr ./$DATE
 }
 
 launch_geekbench 4
