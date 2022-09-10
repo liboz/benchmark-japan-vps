@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+sudo apt update && sudo apt-get install -y curl wget
+
 # From https://gist.github.com/lukechilds/a83e1d7127b78fef38c2914c4ececc3c
 get_latest_release() {
   curl --silent "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
