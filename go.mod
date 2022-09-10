@@ -65,5 +65,6 @@ require (
 
 require (
 	github.com/bufbuild/buf v1.7.0
+	github.com/lib/pq v1.10.7
 	google.golang.org/protobuf v1.28.1
 )
