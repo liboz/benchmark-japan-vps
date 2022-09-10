@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-sudo apt install -y ripgrep
+sudo apt-get install -y ripgrep
 
 # From https://stackoverflow.com/questions/17998978/removing-colors-from-output
 sed -i 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g' result.txt

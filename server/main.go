@@ -21,10 +21,10 @@ import (
 
 var PORT = 8000
 var RESULTS = []*benchmarkv1.BenchmarkResult{}
-var SCRIPT = "./parse_benchmark_result.sh"
+var SCRIPT = "./run_and_parse_bench.sh"
+var DEBUG = false
 
 func csvToResult(csvData [][]string) *benchmarkv1.BenchmarkResult {
-	fmt.Println(csvData)
 	result := &benchmarkv1.BenchmarkResult{}
 	index := 0
 	ioSpeedData := csvData[index]
@@ -127,8 +127,6 @@ func csvToResult(csvData [][]string) *benchmarkv1.BenchmarkResult {
 		result.PingTestResults = append(result.PingTestResults, &pingTestResult)
 		index += 1
 	}
-
-	fmt.Println(result)
 	return result
 }
 
@@ -146,14 +144,17 @@ func (s *BenchmarkServer) runBenchmark() *benchmarkv1.BenchmarkResult {
 	startTime := time.Now().Unix()
 
 	cmd := exec.Command("/bin/bash", SCRIPT)
-	_, err := cmd.CombinedOutput()
+	output, err := cmd.CombinedOutput()
+	if DEBUG {
+		log.Println(string(output))
+	}
 	if err != nil {
 		log.Printf("Error running benchmark/parse script %s\n", err)
 		return nil
 	}
 
 	endTime := time.Now().Unix()
-	log.Printf("Benchmark took %dms to run", endTime-startTime)
+	log.Printf("Benchmark took %ds to run", endTime-startTime)
 
 	f, err := os.Open("parsed_result.csv")
 	if err != nil {
@@ -203,11 +204,16 @@ func (s *BenchmarkServer) GetResults(
 }
 
 func main() {
+	argsWithoutProg := os.Args[1:]
+	if len(argsWithoutProg) > 0 {
+		DEBUG, _ = strconv.ParseBool(argsWithoutProg[0])
+	}
+
 	benchmarkServer := &BenchmarkServer{}
 	mux := http.NewServeMux()
 	path, handler := benchmarkv1connect.NewBenchmarkServiceHandler(benchmarkServer)
 	mux.Handle(path, handler)
 
-	log.Printf("Starting server on port %d\n", PORT)
+	log.Printf("Starting server on port %d with DEBUG: [%v]\n", PORT, DEBUG)
 	log.Fatal(http.ListenAndServe(":"+fmt.Sprintf("%d", PORT), mux))
 }
