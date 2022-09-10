@@ -25,6 +25,9 @@ var SCRIPT = "./run_and_parse_bench.sh"
 var DEBUG = false
 
 func csvToResult(csvData [][]string) *benchmarkv1.BenchmarkResult {
+	if DEBUG {
+		fmt.Println(csvData)
+	}
 	result := &benchmarkv1.BenchmarkResult{}
 	index := 0
 	ioSpeedData := csvData[index]
