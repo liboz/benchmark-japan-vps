@@ -21,8 +21,7 @@ import (
 
 var PORT = 8000
 var RESULTS = []*benchmarkv1.BenchmarkResult{}
-var BENCHMARK_SCRIPT = "./bench.sh"
-var PARSE_BENCHMARK_RESULT_SCRIPT = "./parse_benchmark_result.sh"
+var SCRIPT = "./parse_benchmark_result.sh"
 
 func csvToResult(csvData [][]string) *benchmarkv1.BenchmarkResult {
 	fmt.Println(csvData)
@@ -146,22 +145,15 @@ func (s *BenchmarkServer) updateResults(result *benchmarkv1.BenchmarkResult) {
 func (s *BenchmarkServer) runBenchmark() *benchmarkv1.BenchmarkResult {
 	startTime := time.Now().Unix()
 
-	cmd := exec.Command("/bin/bash", BENCHMARK_SCRIPT)
+	cmd := exec.Command("/bin/bash", SCRIPT)
 	_, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Printf("Error running benchmark script %s\n", err)
+		log.Printf("Error running benchmark/parse script %s\n", err)
 		return nil
 	}
 
 	endTime := time.Now().Unix()
 	log.Printf("Benchmark took %dms to run", endTime-startTime)
-
-	cmd = exec.Command("/bin/bash", PARSE_BENCHMARK_RESULT_SCRIPT)
-	_, err = cmd.CombinedOutput()
-	if err != nil {
-		log.Printf("Error parsing benchmark results %s\n", err)
-		return nil
-	}
 
 	f, err := os.Open("parsed_result.csv")
 	if err != nil {
