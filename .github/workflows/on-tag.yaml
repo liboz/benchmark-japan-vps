@@ -10,6 +10,9 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-go@v3
+        with:
+          go-version: "1.19"
       - uses: bufbuild/buf-setup-action@v1.7.0
       - name: Ensure proto files are linted
         run: buf lint
