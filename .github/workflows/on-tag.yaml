@@ -1,0 +1,21 @@
+name: Releases
+on:
+  push:
+    tags:
+      - "*"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v2
+      - uses: bufbuild/buf-setup-action@v1.7.0
+      - name: Ensure proto files are linted
+        run: buf lint
+      - name: Build server binary
+        run: ./build.sh
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: "benchmark-japan-vps.tar.gz"
+          token: ${{ secrets.RELEASE_TOKEN }}
