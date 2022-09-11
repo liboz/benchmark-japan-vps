@@ -2,6 +2,7 @@
 Description=benchmark server service
 
 [Service]
+WorkingDirectory=/root
 ExecStart=/root/benchmark-japan-vps
 Restart=always
 RestartSec=60
