@@ -5,6 +5,8 @@ Description=benchmark server service
 ExecStart=/root/benchmark-japan-vps
 Restart=always
 RestartSec=60
+StandardOutput=append:/root/benchmark-server.log
+StandardError=append:/root/benchmark-server-err.log
 
 [Install]
 WantedBy=default.target

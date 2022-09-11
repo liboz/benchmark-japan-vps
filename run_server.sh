@@ -20,4 +20,3 @@ cp server/benchmark-server.service /etc/systemd/system
 systemctl daemon-reload
 systemctl enable benchmark-server.service
 systemctl restart benchmark-server.service
-sudo reboot
