@@ -2,6 +2,13 @@
 
 DATE=`date -Iseconds | sed -e "s/:/_/g"`
 YABS_PATH=./$DATE
+
+# Uses combination of 
+# https://github.com/teddysun/across/blob/master/bench.sh
+# and
+# https://github.com/masonr/yet-another-bench-script
+
+
 #
 # Description: A Bench Script by Teddysun
 #
@@ -363,6 +370,20 @@ print_end_time
 next
 
 
+
+
+# Yet Another Bench Script by Mason Rowe
+# Initial Oct 2019; Last update Aug 2022
+#
+# Disclaimer: This project is a work in progress. Any errors or suggestions should be
+#             relayed to me via the GitHub project page linked below.
+#
+# Purpose:    The purpose of this script is to quickly gauge the performance of a Linux-
+#             based server by benchmarking network performance via iperf3, CPU and
+#             overall system performance via Geekbench 4/5, and random disk
+#             performance via fio. The script is designed to not require any dependencies
+#             - either compiled or installed - nor admin privileges to run.
+#
 command -v curl >/dev/null 2>&1 && LOCAL_CURL=true || unset LOCAL_CURL
 ARCH=$(uname -m)
 
