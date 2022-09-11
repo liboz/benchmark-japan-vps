@@ -8,6 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: write
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v3
@@ -22,4 +23,21 @@ jobs:
         with:
           files: |
             benchmark-japan-vps.tar.gz
+          token: ${{ secrets.GITHUB_TOKEN  }}
+      - name: Login to Packages Container registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build docker image
+        run: docker build --progress plain -t ghcr.io/liboz/benchmark-japan-vps-collector:${GITHUB_SHA::7} -t ghcr.io/liboz/benchmark-japan-vps-collector:latest .
+      - name: Upload benchmark-japan-vps-collector image
+        run: docker push --all-tags ghcr.io/liboz/benchmark-japan-vps-collector
+      - name: Repository Dispatch for benchmark-japan-vps-collector
+        uses: peter-evans/repository-dispatch@v1
+        with:
           token: ${{ secrets.RELEASE_TOKEN }}
+          event-type: deploy
+          repository: ${{ secrets.KUBERNETES_REPO_NAME }}
+          client-payload: '{"repository": "${{ github.repository }}", "sha": "${{ github.sha }}", "image_name": "benchmark-japan-vps-collector"}'
