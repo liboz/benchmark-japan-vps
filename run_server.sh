@@ -16,6 +16,7 @@ wget https://github.com/liboz/benchmark-japan-vps/releases/download/$TAG/benchma
 tar -xf benchmark-japan-vps.tar.gz
 
 echo "Add systemd service"
+mkdir -p /root/logs
 cp server/benchmark-server.service /etc/systemd/system 
 systemctl daemon-reload
 systemctl enable benchmark-server.service
