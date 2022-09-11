@@ -8,6 +8,7 @@ import (
 var INITIAL_TABLE_SQL = `CREATE TABLE IF NOT EXISTS benchmark_results (
     benchmark_id bigserial PRIMARY KEY,
     target inet,
+    name VARCHAR(255),
     start_time bigint,
     end_time bigint,
     io_speed bigint,

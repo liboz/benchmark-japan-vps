@@ -200,10 +200,26 @@ func (s *BenchmarkServer) GetResults(
 ) (*connect.Response[benchmarkv1.GetResultsResponse], error) {
 	s.mutex.Lock()
 	currentResults := RESULTS
-	RESULTS = []*benchmarkv1.BenchmarkResult{}
 	s.mutex.Unlock()
 	log.Printf("Getting results, returning %s", currentResults)
 	return connect.NewResponse(&benchmarkv1.GetResultsResponse{Results: currentResults}), nil
+}
+
+func (s *BenchmarkServer) DeleteOldResults(
+	ctx context.Context,
+	req *connect.Request[benchmarkv1.DeleteOldResultsRequest],
+) (*connect.Response[benchmarkv1.DeleteOldResultsResponse], error) {
+	s.mutex.Lock()
+	newResults := []*benchmarkv1.BenchmarkResult{}
+	for _, result := range RESULTS {
+		if result.EndTime <= req.Msg.LatestEndTime {
+			newResults = append(newResults, result)
+		}
+	}
+	RESULTS = newResults
+	log.Printf("Results is now: %s", RESULTS)
+	s.mutex.Unlock()
+	return connect.NewResponse(&benchmarkv1.DeleteOldResultsResponse{}), nil
 }
 
 func (s *BenchmarkServer) runBenchmarkRegularly() {

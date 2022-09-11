@@ -20,15 +20,30 @@ import (
 )
 
 var DEBUG = false
-var TARGETS = []string{}
+var TARGETS = []Target{}
 
-func getResult(ch chan []*benchmarkv1.BenchmarkResult, target string) {
+type Target struct {
+	IpAddress string
+	Name      string
+}
+
+func parseTargetFromString(targetString string) Target {
+	split := strings.Split(targetString, ":")
+	return Target{IpAddress: split[0], Name: split[1]}
+}
+
+func makeClientFromTarget(target Target) (benchmarkv1connect.BenchmarkServiceClient, context.Context, context.CancelFunc) {
 	client := benchmarkv1connect.NewBenchmarkServiceClient(
 		http.DefaultClient,
-		fmt.Sprintf("http://%s:8000", target),
+		fmt.Sprintf("http://%s:8000", target.IpAddress),
 	)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3) // wait up to 3 minutes
+	return client, ctx, cancel
+}
+
+func getResult(ch chan []*benchmarkv1.BenchmarkResult, target Target) {
+	client, ctx, cancel := makeClientFromTarget(target)
 	defer cancel()
 
 	res, err := client.GetResults(
@@ -42,10 +57,26 @@ func getResult(ch chan []*benchmarkv1.BenchmarkResult, target string) {
 	}
 
 	for _, result := range res.Msg.Results {
-		result.IpAddress = target
+		result.IpAddress = target.IpAddress
+		result.Name = target.Name
 	}
 
 	ch <- res.Msg.Results
+}
+
+func deleteOldResults(target Target, endTime int64) {
+	client, ctx, cancel := makeClientFromTarget(target)
+	defer cancel()
+
+	_, err := client.DeleteOldResults(
+		ctx,
+		connect.NewRequest(&benchmarkv1.DeleteOldResultsRequest{LatestEndTime: endTime}),
+	)
+	if err != nil {
+		log.Printf("Error deleting old results from target %s with endTime %d: %s", target, endTime, err)
+		return
+	}
+	log.Printf("Deleted old results from target %s with endTime %d", target, endTime)
 }
 
 func getResultsFromAllTargets() []*benchmarkv1.BenchmarkResult {
@@ -95,6 +126,7 @@ func insertSpeedTestResults(txn *sql.Tx, benchmarkId int64, speedTestResults []*
 	insertStatement := speedTestResultsSql(placeholders)
 	_, err := txn.Exec(insertStatement, vals...)
 	if err != nil {
+		log.Printf("Error inserting speed_test_results: %s", err)
 		log.Printf("Attempted to insert into speed_test_results with statement [%s] and vals [%s]", insertStatement, vals)
 	}
 
@@ -123,6 +155,7 @@ func insertPingTestResults(txn *sql.Tx, benchmarkId int64, pingTestResults []*be
 	insertStatement := pingTestResultsSql(placeholders)
 	_, err := txn.Exec(insertStatement, vals...)
 	if err != nil {
+		log.Printf("Error inserting ping_test_result: %s", err)
 		log.Printf("Attempted to insert into ping_test_results with statement [%s] and vals [%s]", insertStatement, vals)
 	}
 
@@ -132,13 +165,14 @@ func insertPingTestResults(txn *sql.Tx, benchmarkId int64, pingTestResults []*be
 func insertIntoPostgres(db *sql.DB, newResults []*benchmarkv1.BenchmarkResult) {
 	start := time.Now()
 	for _, result := range newResults {
-		placeholder := fmt.Sprintf("($%d,$%d,$%d,$%d,$%d,$%d)",
+		placeholder := fmt.Sprintf("($%d,$%d,$%d,$%d,$%d,$%d,$%d)",
 			1,
 			2,
 			3,
 			4,
 			5,
 			6,
+			7,
 		)
 
 		txn, err := db.Begin()
@@ -147,7 +181,7 @@ func insertIntoPostgres(db *sql.DB, newResults []*benchmarkv1.BenchmarkResult) {
 		}
 
 		insertStatement := benchmarkResultsSql(placeholder)
-		row := txn.QueryRow(insertStatement, result.IpAddress, result.StartTime, result.EndTime, result.IoSpeed, result.SingleCoreGeekbench, result.MultiCoreGeekbench)
+		row := txn.QueryRow(insertStatement, result.IpAddress, result.Name, result.StartTime, result.EndTime, result.IoSpeed, result.SingleCoreGeekbench, result.MultiCoreGeekbench)
 
 		var lastInsertId int64 = 0
 		err = row.Scan(&lastInsertId)
@@ -160,7 +194,6 @@ func insertIntoPostgres(db *sql.DB, newResults []*benchmarkv1.BenchmarkResult) {
 		err = insertSpeedTestResults(txn, lastInsertId, result.SpeedTestResults)
 
 		if err != nil {
-			log.Printf("Error inserting speed_test_results: %s", err)
 			txn.Rollback()
 			continue
 		}
@@ -168,7 +201,6 @@ func insertIntoPostgres(db *sql.DB, newResults []*benchmarkv1.BenchmarkResult) {
 		err = insertPingTestResults(txn, lastInsertId, result.PingTestResults)
 
 		if err != nil {
-			log.Printf("Error inserting ping_test_result: %s", err)
 			txn.Rollback()
 			continue
 		}
@@ -178,6 +210,9 @@ func insertIntoPostgres(db *sql.DB, newResults []*benchmarkv1.BenchmarkResult) {
 		}
 
 		log.Printf("Inserted %s as %d", result, lastInsertId)
+		go func(result *benchmarkv1.BenchmarkResult) {
+			deleteOldResults(Target{IpAddress: result.IpAddress, Name: result.Name}, result.EndTime)
+		}(result)
 	}
 	elapsedTime := time.Since(start)
 	log.Printf("Took %s to insert gathered data into postgres", elapsedTime)
@@ -206,7 +241,10 @@ func createTablesIfNotExisting(db *sql.DB) error {
 
 func main() {
 	argsWithoutProg := os.Args[1:]
-	TARGETS = strings.Split(argsWithoutProg[0], ",")
+	targetStrings := strings.Split(argsWithoutProg[0], ",")
+	for _, targetString := range targetStrings {
+		TARGETS = append(TARGETS, parseTargetFromString(targetString))
+	}
 
 	if len(argsWithoutProg) == 3 {
 		DEBUG, _ = strconv.ParseBool(argsWithoutProg[2])
