@@ -11,11 +11,13 @@ get_latest_release() {
 
 TAG=$(get_latest_release  liboz/benchmark-japan-vps)
 echo "Latest release is $TAG"
+rm -f benchmark-japan-vps.tar.gz
 wget https://github.com/liboz/benchmark-japan-vps/releases/download/$TAG/benchmark-japan-vps.tar.gz
 tar -xf benchmark-japan-vps.tar.gz
 
-
 echo "Add systemd service"
-cp benchmark-server.service /etc/systemd/system 
+cp server/benchmark-server.service /etc/systemd/system 
 systemctl daemon-reload
+systemctl enable benchmark-server.service
 systemctl restart benchmark-server.service
+sudo reboot

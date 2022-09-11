@@ -188,9 +188,9 @@ func (s *BenchmarkServer) StartBenchmark(
 	ctx context.Context,
 	req *connect.Request[benchmarkv1.StartBenchmarkRequest],
 ) (*connect.Response[benchmarkv1.StartBenchmarkResponse], error) {
-	log.Printf("%s: Start benchmark run", time.Now())
+	log.Printf("Start benchmark run")
 	result := s.runBenchmark()
-	log.Printf("%s: Benchmark run, returning %s", time.Now(), result)
+	log.Printf("Benchmark run, returning %s", result)
 	return connect.NewResponse(&benchmarkv1.StartBenchmarkResponse{Result: result}), nil
 }
 
@@ -202,7 +202,7 @@ func (s *BenchmarkServer) GetResults(
 	currentResults := RESULTS
 	RESULTS = []*benchmarkv1.BenchmarkResult{}
 	s.mutex.Unlock()
-	log.Printf("%s: Getting results, returning %s", time.Now(), currentResults)
+	log.Printf("Getting results, returning %s", currentResults)
 	return connect.NewResponse(&benchmarkv1.GetResultsResponse{Results: currentResults}), nil
 }
 
