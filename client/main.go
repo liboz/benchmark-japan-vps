@@ -41,6 +41,10 @@ func getResult(ch chan []*benchmarkv1.BenchmarkResult, target string) {
 		return
 	}
 
+	for _, result := range res.Msg.Results {
+		result.IpAddress = target
+	}
+
 	ch <- res.Msg.Results
 }
 
@@ -100,16 +104,17 @@ func insertPingTestResults(txn *sql.Tx, benchmarkId int64, pingTestResults []*be
 		vals         []interface{}
 	)
 	for index, pingTestResult := range pingTestResults {
-		placeholders = append(placeholders, fmt.Sprintf("($%d,$%d,$%d,$%d,$%d,$%d)",
-			index*6+1,
-			index*6+2,
-			index*6+3,
-			index*6+4,
-			index*6+5,
-			index*6+6,
+		placeholders = append(placeholders, fmt.Sprintf("($%d,$%d,$%d,$%d,$%d,$%d,$%d)",
+			index*7+1,
+			index*7+2,
+			index*7+3,
+			index*7+4,
+			index*7+5,
+			index*7+6,
+			index*7+7,
 		))
 
-		vals = append(vals, benchmarkId, pingTestResult.DroppedPackets, pingTestResult.MinimumPing, pingTestResult.AveragePing, pingTestResult.MaximumPing, pingTestResult.StandardDeviation)
+		vals = append(vals, benchmarkId, pingTestResult.Url, pingTestResult.DroppedPackets, pingTestResult.MinimumPing, pingTestResult.AveragePing, pingTestResult.MaximumPing, pingTestResult.StandardDeviation)
 	}
 
 	insertStatement := pingTestResultsSql(placeholders)
@@ -121,12 +126,13 @@ func insertPingTestResults(txn *sql.Tx, benchmarkId int64, pingTestResults []*be
 func insertIntoPostgres(db *sql.DB, newResults []*benchmarkv1.BenchmarkResult) {
 	start := time.Now()
 	for _, result := range newResults {
-		placeholder := fmt.Sprintf("($%d,$%d,$%d,$%d,$%d)",
+		placeholder := fmt.Sprintf("($%d,$%d,$%d,$%d,$%d,$%d)",
 			1,
 			2,
 			3,
 			4,
 			5,
+			6,
 		)
 
 		txn, err := db.Begin()
@@ -135,7 +141,7 @@ func insertIntoPostgres(db *sql.DB, newResults []*benchmarkv1.BenchmarkResult) {
 		}
 
 		insertStatement := benchmarkResultsSql(placeholder)
-		row := txn.QueryRow(insertStatement, result.StartTime, result.EndTime, result.IoSpeed, result.SingleCoreGeekbench, result.MultiCoreGeekbench)
+		row := txn.QueryRow(insertStatement, result.IpAddress, result.StartTime, result.EndTime, result.IoSpeed, result.SingleCoreGeekbench, result.MultiCoreGeekbench)
 
 		var lastInsertId int64 = 0
 		err = row.Scan(&lastInsertId)

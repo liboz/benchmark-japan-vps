@@ -25,13 +25,14 @@ message PingTestResult {
   }
 
   message BenchmarkResult {
-    int64 start_time = 1;
-    int64 end_time = 2;
-    int64 io_speed = 3;
-    repeated SpeedTestResult speed_test_results = 4;
-    int64 single_core_geekbench = 5;
-    int64 multi_core_geekbench = 6;
-    repeated PingTestResult ping_test_results = 7; 
+    string ip_address = 1;
+    int64 start_time = 2;
+    int64 end_time = 3;
+    int64 io_speed = 4;
+    repeated SpeedTestResult speed_test_results = 5;
+    int64 single_core_geekbench = 6;
+    int64 multi_core_geekbench = 7;
+    repeated PingTestResult ping_test_results = 8; 
   }
 
 

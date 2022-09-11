@@ -7,6 +7,7 @@ import (
 
 var INITIAL_TABLE_SQL = `CREATE TABLE IF NOT EXISTS benchmark_results (
     benchmark_id bigserial PRIMARY KEY,
+    target inet,
     start_time bigint,
     end_time bigint,
     io_speed bigint,
@@ -29,6 +30,7 @@ CREATE TABLE IF NOT EXISTS speed_test_results (
 CREATE TABLE IF NOT EXISTS ping_test_results (
     ping_test_result_id bigserial PRIMARY KEY,
     benchmark_id bigint,
+    url VARCHAR(255),
     dropped_packets bigint,
     minimum_ping double precision,
     average_ping double precision,
@@ -40,11 +42,11 @@ CREATE TABLE IF NOT EXISTS ping_test_results (
 );`
 
 var BENCHMARK_RESULT_SQL = `INSERT INTO 
-benchmark_results(start_time,end_time,io_speed,single_core_geekbench,multi_core_geekbench) 
+benchmark_results(target,start_time,end_time,io_speed,single_core_geekbench,multi_core_geekbench) 
 VALUES %s RETURNING benchmark_id`
 
 var PING_TEST_RESULTS_SQL = `INSERT INTO 
-ping_test_results(benchmark_id,dropped_packets,minimum_ping,average_ping,maximum_ping,standard_deviation) 
+ping_test_results(benchmark_id,url,dropped_packets,minimum_ping,average_ping,maximum_ping,standard_deviation) 
 VALUES %s`
 
 var SPEED_TEST_RESULTS_SQL = `INSERT INTO 
