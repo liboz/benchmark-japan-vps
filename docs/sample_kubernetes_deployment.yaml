@@ -1,0 +1,96 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: benchmark-japan-vps-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: benchmark-japan-vps-collector
+  template:
+    metadata:
+      labels:
+        app: benchmark-japan-vps-collector
+    spec:
+      containers:
+        - name: benchmark-japan-vps-collector
+          image: ghcr.io/liboz/benchmark-japan-vps-collector
+          imagePullPolicy: Always
+          args: [
+              "127.0.0.1:localhost,127.0.0.2:localhost2",
+              # USE MORE SECURE CREDENTIALS お願いします！
+              "postgres://username:password@benchmark-japan-vps-collector-postgres:5432/benchmark-japan-vps?sslmode=disable",
+            ]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 50Mi
+            limits:
+              memory: 50Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: benchmark-japan-vps-collector-postgres
+  labels:
+    app: benchmark-japan-vps-collector-postgres
+spec:
+  ports:
+    - port: 5432
+  selector:
+    app: benchmark-japan-vps-collector-postgres
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: benchmark-japan-vps-collector-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: benchmark-japan-vps-collector-postgres
+  template:
+    metadata:
+      labels:
+        app: benchmark-japan-vps-collector-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:14.5
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: benchmark-japan-vps-collector-postgres-secret
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgresdata
+      volumes:
+        - name: postgresdata
+          persistentVolumeClaim:
+            claimName: benchmark-japan-vps-collector-postgres-volume
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: benchmark-japan-vps-collector-postgres-volume
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path # Can be changed to something more reliable
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: benchmark-japan-vps-collector-postgres-secret
+  labels:
+    app: benchmark-japan-vps-collector-postgres
+data:
+  POSTGRES_DB: benchmark-japan-vps
+  POSTGRES_USER: username # CHANGE TO SOMETHING MORE SECURE PLEASE お願いします！
+  POSTGRES_PASSWORD: password
