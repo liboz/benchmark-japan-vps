@@ -18,7 +18,8 @@ jobs:
         run: buf lint
       - name: Build server binary
         run: ./build.sh
-      - uses: ncipollo/release-action@v1
+      - uses: softprops/action-gh-release@v1
         with:
-          artifacts: "benchmark-japan-vps.tar.gz"
+          files: |
+            benchmark-japan-vps.tar.gz
           token: ${{ secrets.RELEASE_TOKEN }}
