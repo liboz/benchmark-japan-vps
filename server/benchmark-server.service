@@ -2,6 +2,9 @@
 Description=benchmark server service
 
 [Service]
+# need a user because speedtest-cli uses writes the license acceptance to <currentuser>/.config/ookla/speedtest-cli.json
+# see https://www.zabbix.com/forum/zabbix-troubleshooting-and-problems/391046-userparameter-terminate-called-after-throwing-an-instance-of-std-logic_error
+User=root
 WorkingDirectory=/root
 ExecStart=/root/benchmark-japan-vps
 Restart=always
