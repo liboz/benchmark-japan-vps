@@ -94,6 +94,9 @@ func insertSpeedTestResults(txn *sql.Tx, benchmarkId int64, speedTestResults []*
 
 	insertStatement := speedTestResultsSql(placeholders)
 	_, err := txn.Exec(insertStatement, vals...)
+	if err != nil {
+		log.Printf("Attempted to insert into speed_test_results with statement [%s] and vals [%s]", insertStatement, vals)
+	}
 
 	return err
 }
@@ -119,6 +122,9 @@ func insertPingTestResults(txn *sql.Tx, benchmarkId int64, pingTestResults []*be
 
 	insertStatement := pingTestResultsSql(placeholders)
 	_, err := txn.Exec(insertStatement, vals...)
+	if err != nil {
+		log.Printf("Attempted to insert into ping_test_results with statement [%s] and vals [%s]", insertStatement, vals)
+	}
 
 	return err
 }
