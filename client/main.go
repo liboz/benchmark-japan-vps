@@ -126,8 +126,7 @@ func insertSpeedTestResults(txn *sql.Tx, benchmarkId int64, speedTestResults []*
 	insertStatement := speedTestResultsSql(placeholders)
 	_, err := txn.Exec(insertStatement, vals...)
 	if err != nil {
-		log.Printf("Error inserting speed_test_results: %s", err)
-		log.Printf("Attempted to insert into speed_test_results with statement [%s] and vals [%s]", insertStatement, vals)
+		log.Printf("Error inserting speed_test_results: %s, Attempted to insert with statement [%s] and vals [%s]", err, insertStatement, vals)
 	}
 
 	return err
@@ -155,8 +154,7 @@ func insertPingTestResults(txn *sql.Tx, benchmarkId int64, pingTestResults []*be
 	insertStatement := pingTestResultsSql(placeholders)
 	_, err := txn.Exec(insertStatement, vals...)
 	if err != nil {
-		log.Printf("Error inserting ping_test_result: %s", err)
-		log.Printf("Attempted to insert into ping_test_results with statement [%s] and vals [%s]", insertStatement, vals)
+		log.Printf("Error inserting ping_test_result: %s, Attempted to insert with statement [%s] and vals [%s]", err, insertStatement, vals)
 	}
 
 	return err
@@ -181,12 +179,14 @@ func insertIntoPostgres(db *sql.DB, newResults []*benchmarkv1.BenchmarkResult) {
 		}
 
 		insertStatement := benchmarkResultsSql(placeholder)
-		row := txn.QueryRow(insertStatement, result.IpAddress, result.Name, result.StartTime, result.EndTime, result.IoSpeed, result.SingleCoreGeekbench, result.MultiCoreGeekbench)
+		vals := []interface{}{result.IpAddress, result.Name, result.StartTime, result.EndTime,
+			result.IoSpeed, result.SingleCoreGeekbench, result.MultiCoreGeekbench}
+		row := txn.QueryRow(insertStatement, vals...)
 
 		var lastInsertId int64 = 0
 		err = row.Scan(&lastInsertId)
 		if err != nil {
-			log.Printf("Error inserting benchmark_results: %s", err)
+			log.Printf("Error inserting benchmark_results: %s, Attempted to insert with statement [%s] and vals [%s]", err, insertStatement, vals)
 			txn.Rollback()
 			continue
 		}

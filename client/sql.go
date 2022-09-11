@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS ping_test_results (
 );`
 
 var BENCHMARK_RESULT_SQL = `INSERT INTO 
-benchmark_results(target,start_time,end_time,io_speed,single_core_geekbench,multi_core_geekbench) 
+benchmark_results(target,name,start_time,end_time,io_speed,single_core_geekbench,multi_core_geekbench) 
 VALUES %s RETURNING benchmark_id`
 
 var PING_TEST_RESULTS_SQL = `INSERT INTO 

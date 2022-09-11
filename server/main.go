@@ -212,7 +212,7 @@ func (s *BenchmarkServer) DeleteOldResults(
 	s.mutex.Lock()
 	newResults := []*benchmarkv1.BenchmarkResult{}
 	for _, result := range RESULTS {
-		if result.EndTime <= req.Msg.LatestEndTime {
+		if result.EndTime > req.Msg.LatestEndTime {
 			newResults = append(newResults, result)
 		}
 	}
