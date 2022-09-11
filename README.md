@@ -5,7 +5,7 @@ This repo is used to store a program used to benchmark vps performance. The main
 ## Test Client DB Insert Locally
 
 ```
-go run client/main.go client/sql.go 127.0.0.1:localhost "postgres://username:password@localhost:5432/benchmark-japan-vps?sslmode=disable"
+go run collector/main.go collector/sql.go 127.0.0.1:localhost "postgres://username:password@localhost:5432/benchmark-japan-vps?sslmode=disable"
 ```
 
 ## Commands to test locally
@@ -13,4 +13,18 @@ go run client/main.go client/sql.go 127.0.0.1:localhost "postgres://username:pas
 ```
 go run server/main.go
 curl     --header "Content-Type: application/json"     --data '{}'     http://localhost:8000/service.v1.BenchmarkService/GetResults
+```
+
+## Running in a server
+
+Copy over the start script:
+
+```
+scp run_server.sh root@ip_address:/root
+```
+
+May need to open the port with iptables:
+
+```
+iptables -A INPUT -p tcp --dport 8000 -j ACCEPT
 ```
