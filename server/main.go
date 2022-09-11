@@ -144,6 +144,7 @@ func (s *BenchmarkServer) updateResults(result *benchmarkv1.BenchmarkResult) {
 }
 
 func (s *BenchmarkServer) runBenchmark() *benchmarkv1.BenchmarkResult {
+	log.Printf("Start benchmark run")
 	startTime := time.Now().Unix()
 
 	cmd := exec.Command("/bin/bash", SCRIPT)
@@ -188,7 +189,6 @@ func (s *BenchmarkServer) StartBenchmark(
 	ctx context.Context,
 	req *connect.Request[benchmarkv1.StartBenchmarkRequest],
 ) (*connect.Response[benchmarkv1.StartBenchmarkResponse], error) {
-	log.Printf("Start benchmark run")
 	result := s.runBenchmark()
 	log.Printf("Benchmark run, returning %s", result)
 	return connect.NewResponse(&benchmarkv1.StartBenchmarkResponse{Result: result}), nil
@@ -206,6 +206,15 @@ func (s *BenchmarkServer) GetResults(
 	return connect.NewResponse(&benchmarkv1.GetResultsResponse{Results: currentResults}), nil
 }
 
+func (s *BenchmarkServer) runBenchmarkRegularly() {
+	// sleep 1 minute at the start to prevent too much resource contention immediately
+	time.Sleep(time.Minute)
+	for {
+		s.runBenchmark()
+		time.Sleep(time.Hour)
+	}
+}
+
 func main() {
 	argsWithoutProg := os.Args[1:]
 	if len(argsWithoutProg) > 0 {
@@ -216,6 +225,10 @@ func main() {
 	mux := http.NewServeMux()
 	path, handler := benchmarkv1connect.NewBenchmarkServiceHandler(benchmarkServer)
 	mux.Handle(path, handler)
+
+	go func() {
+		benchmarkServer.runBenchmarkRegularly()
+	}()
 
 	log.Printf("Starting server on port %d with DEBUG: [%v]\n", PORT, DEBUG)
 	log.Fatal(http.ListenAndServe(":"+fmt.Sprintf("%d", PORT), mux))
