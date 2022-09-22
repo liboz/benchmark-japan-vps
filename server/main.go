@@ -86,11 +86,22 @@ func csvToResult(csvData [][]string) *benchmarkv1.BenchmarkResult {
 	}
 
 	index += 1
+	pingIndex := 0
 	for index < len(csvData) {
 		currRow = csvData[index]
 
 		pingTestResult := benchmarkv1.PingTestResult{}
 		pingTestResult.Url = currRow[0]
+		// since these are by default ipv6 responses, ping -4 results in no host name for whatever reason.
+		// So, we need to manually add them back in
+		if pingTestResult.Url == "" {
+			if pingIndex == 0 {
+				pingTestResult.Url = "google.com"
+
+			} else if pingIndex == 1 {
+				pingTestResult.Url = "youtube.com"
+			}
+		}
 		parsed, err := units.FromHumanSize(currRow[1])
 		if err == nil {
 			pingTestResult.DroppedPackets = &parsed
@@ -129,6 +140,7 @@ func csvToResult(csvData [][]string) *benchmarkv1.BenchmarkResult {
 
 		result.PingTestResults = append(result.PingTestResults, &pingTestResult)
 		index += 1
+		pingIndex += 1
 	}
 	return result
 }
