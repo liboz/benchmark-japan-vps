@@ -460,7 +460,7 @@ function launch_geekbench {
 
 launch_geekbench 4
 
-ping -c 60 -q google.com
-ping -c 60 -q youtube.com
-ping -c 60 -q amazon.co.jp
-ping -c 60 -q yahoo.co.jp
+ping -4 -c 60 -q google.com
+ping -4 -c 60 -q youtube.com
+ping -4 -c 60 -q amazon.co.jp
+ping -4 -c 60 -q yahoo.co.jp
