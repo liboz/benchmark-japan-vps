@@ -191,11 +191,13 @@ func insertIntoPostgres(db *sql.DB, newResults []*benchmarkv1.BenchmarkResult) {
 			continue
 		}
 
-		err = insertSpeedTestResults(txn, lastInsertId, result.SpeedTestResults)
+		if len(result.SpeedTestResults) > 0 {
+			err = insertSpeedTestResults(txn, lastInsertId, result.SpeedTestResults)
 
-		if err != nil {
-			txn.Rollback()
-			continue
+			if err != nil {
+				txn.Rollback()
+				continue
+			}
 		}
 
 		err = insertPingTestResults(txn, lastInsertId, result.PingTestResults)
