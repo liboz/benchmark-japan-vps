@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sort"
 
 	_ "github.com/lib/pq"
 
@@ -115,6 +116,12 @@ func main() {
 
 	jsonData := formatForJson(sqlData)
 	log.Print("successfully converted data to json!")
+
+	for _, result := range jsonData {
+		sort.Slice(result, func(i, j int) bool {
+			return result[i].StartTime < result[j].StartTime
+		})
+	}
 
 	file, err := json.MarshalIndent(jsonData, "", " ")
 	if err != nil {
